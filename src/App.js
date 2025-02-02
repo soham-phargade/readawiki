@@ -152,6 +152,51 @@ function HistorySidebar({
 }
 
 /**
+ * Fetch the metadata (title and description) for a given URL by fetching its HTML
+ * and parsing the metatags.
+ */
+// async function fetchMetadata(url) {
+//   try {
+//     const response = await fetch(url);
+//     const htmlText = await response.text();
+//     const parser = new DOMParser();
+//     const doc = parser.parseFromString(htmlText, 'text/html');
+//     const metaTitle = doc.querySelector('title')?.textContent || '';
+//     const metaDescription =
+//       doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
+//       doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
+//       '';
+//     return { title: metaTitle, description: metaDescription };
+//   } catch (error) {
+//     console.error('Error fetching metadata for', url, error);
+//     return { title: '', description: '' };
+//   }
+// }
+
+async function fetchMetadata(url) {
+  try {
+    const response = await fetch(url);
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const metaTitle = doc.querySelector('title')?.textContent || '';
+
+    const metaDescription =
+      doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
+      doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
+      doc.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || 
+      '';
+
+    return { title: metaTitle, description: metaDescription };
+  } catch (error) {
+    console.error('Error fetching metadata for', url, error);
+    return { title: '', description: '' };
+  }
+}
+
+
+/**
  * App Component
  *
  * – When the user submits a search, a new query node is created and added at the top of the history.
@@ -198,7 +243,7 @@ function App() {
       const data = await response.json();
       // Data is in the format:
       // [ [ score, "url" ], [ score, "url" ], ... ]
-      // Map the data to objects, assign a logo based on the domain, and extract a title.
+      // Map the data to objects, assign a logo based on the domain, and extract an initial title.
       const resultsData = data.map((item) => {
         const [/*score*/, url] = item; // remove score
         let title = url;
@@ -237,9 +282,27 @@ function App() {
         } catch (err) {
           title = url;
         }
-        return { url, title, logoUrl };
+        return { url, title, logoUrl, description: '' };
       });
       setResults(resultsData);
+
+      // For each result, fetch its metadata (title and description) from the URL.
+      resultsData.forEach((result) => {
+        fetchMetadata(result.url).then((metadata) => {
+          setResults((prevResults) =>
+            prevResults.map((r) =>
+              r.url === result.url
+                ? {
+                    ...r,
+                    // Use the fetched title if available; otherwise keep the fallback.
+                    title: metadata.title || r.title,
+                    description: metadata.description,
+                  }
+                : r
+            )
+          );
+        });
+      });
     } catch (err) {
       setError('Error fetching results');
       setResults([]);
@@ -341,7 +404,10 @@ function App() {
       />
       <div className="main-content">
         <header className="app-header">
-          <h1 className="app-title">OpenFiche</h1>
+          <div className="title-and-icon">
+          <h1 className="app-title">OpenFiche Search</h1>
+          <img src="/icon.ico" alt="OpenFiche Icon" className="app-icon" />
+          </div>
           <form className="search-form" onSubmit={handleSearch}>
             <input
               type="text"
@@ -374,11 +440,7 @@ function App() {
           {error && <p className="error">{error}</p>}
           {results.map((result, index) => (
             <div key={result.url || index} className="result-item">
-              <img
-                src={result.logoUrl}
-                alt="logo"
-                className="result-logo"
-              />
+              <img src={result.logoUrl} alt="logo" className="result-logo" />
               <div className="result-content">
                 <h2 className="result-title">
                   <a
@@ -390,6 +452,9 @@ function App() {
                     {result.title}
                   </a>
                 </h2>
+                {result.description && (
+                  <p className="result-description">{result.description}</p>
+                )}
                 <a
                   href={result.url}
                   target="_blank"

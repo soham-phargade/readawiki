@@ -68,7 +68,7 @@ body {
   align-items: center;
   padding: 0.5rem 0.75rem;
   background-color: var(--input-bg);
-  border-radius: 8px;
+  border-radius: 0px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
@@ -82,6 +82,7 @@ body {
 }
 .node-label {
   flex: 1;
+  font-weight: normal;
 }
 .delete-button {
   background: none;
@@ -112,7 +113,7 @@ body {
   margin-bottom: 1.5rem;
 }
 .app-title {
-  margin: 0;
+  margin: 20px;
   font-size: 2.5rem;
   color: var(--accent-color);
 }
@@ -258,4 +259,100 @@ body {
 
 .result-title {
   font-weight: normal;
+}
+
+/* Result Items: Display as card with logo to the left */
+.result-item {
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Logo displayed to the left of the text */
+.result-logo {
+  width: 2em;
+  height: 2em;
+  margin-right: 1rem;
+  object-fit: contain;
+}
+
+/* Container for the text content of a result */
+.result-content {
+  flex: 1;
+}
+
+/* Result title styling */
+.result-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: var(--accent-color);
+}
+
+.result-title a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.result-title a:hover {
+  text-decoration: underline;
+}
+
+/* Description styling */
+.result-description {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  color: var(--text-color);
+}
+
+/* Link styling */
+.result-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.result-link:hover {
+  background-color: var(--input-bg);
+}
+
+.app-icon {
+  width: 48px; /* Adjust size as needed */
+  height: 48px;
+  margin-right: 8px; /* Add some spacing */
+}
+
+.app-title-container { /* New container for title and icon */
+  display: flex;
+  align-items: center; /* Vertically align items */
+  margin: 20px;
+}
+
+.app-title {
+  font-size: 2.5rem;
+  color: var(--accent-color);
+  margin: 0; 
+  margin-left: 8px; /* Space between icon and title */
+}
+
+.app-icon {
+  padding-left: 10px;
+  width: 48px;
+  height: 48px;
+  margin-top: -5px;
+}
+
+.title-and-icon {
+  display: flex;
+  align-items: center; /* Aligns items vertically */
+  gap: 10px; /* Adjust spacing between elements */
+  justify-content: center;
+  margin-bottom: 20px;
 }
