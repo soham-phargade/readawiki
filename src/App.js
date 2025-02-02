@@ -54,7 +54,6 @@ function HistorySidebar({
               strokeLinecap="round"
               strokeLinejoin="round"
               viewBox="0 0 24 24"
-              
             >
               <polyline points="12 8 12 12 14 14"></polyline>
               <path d="M21 12a9 9 0 1 1-3.5-7.5"></path>
@@ -154,29 +153,98 @@ function HistorySidebar({
   );
 }
 
-// Fetch metadata (title, description) for a given URL
+/**
+ * Fetch metadata (title, description) for a given URL.
+ *  - If it's a Wikipedia link, parse the article title from the URL
+ *    and use the REST summary endpoint to get the 'extract'.
+ *  - Otherwise, fetch the HTML and parse out standard meta tags or fallback paragraph.
+ */
 async function fetchMetadata(url) {
   try {
-    const response = await fetch(url);
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
+    const isWikipedia = url.includes('wikipedia.org');
+    if (isWikipedia) {
+      // Wikipedia approach using the REST summary endpoint
+      const articleTitle = extractWikiArticleTitle(url); // see helper below
+      const apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+        articleTitle
+      )}`;
 
-    const metaTitle = doc.querySelector('title')?.textContent || '';
-    const metaDescription =
-      doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
-      doc
-        .querySelector('meta[property="og:description"]')
-        ?.getAttribute('content') ||
-      doc
-        .querySelector('meta[name="twitter:description"]')
-        ?.getAttribute('content') ||
-      '';
+      const resp = await fetch(apiUrl);
+      const json = await resp.json();
 
-    return { title: metaTitle, description: metaDescription };
+      // The summary API returns `title` and `extract`
+      const wikiTitle = json.title || articleTitle;
+      const wikiExtract = json.extract || '';
+
+      return { title: wikiTitle, description: wikiExtract };
+    } else {
+      // Non-Wikipedia approach
+      const response = await fetch(url);
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      // Gather meta data
+      const metaTitle = doc.querySelector('title')?.textContent.trim() || '';
+      let metaDescription =
+        doc
+          .querySelector('meta[name="description"]')
+          ?.getAttribute('content') ||
+        doc
+          .querySelector('meta[property="og:description"]')
+          ?.getAttribute('content') ||
+        doc
+          .querySelector('meta[name="twitter:description"]')
+          ?.getAttribute('content') ||
+        '';
+
+      // FALLBACK: if no meta description found, try the first paragraph
+      if (!metaDescription) {
+        const fallbackParagraph =
+          doc.querySelector('article p') ||
+          doc.querySelector('main p') ||
+          doc.querySelector('body p');
+        if (fallbackParagraph) {
+          metaDescription = fallbackParagraph.textContent.trim();
+        }
+      }
+
+      return {
+        title: metaTitle,
+        description: metaDescription,
+      };
+    }
   } catch (error) {
     console.error('Error fetching metadata for', url, error);
     return { title: '', description: '' };
+  }
+}
+
+/**
+ * Helper to extract the Wikipedia article title from a URL like:
+ *  https://en.wikipedia.org/wiki/The_Washington_Post
+ *  returns "The_Washington_Post"
+ *
+ * We handle both "en.wikipedia.org" and "en.m.wikipedia.org" and any subpath.
+ */
+function extractWikiArticleTitle(url) {
+  try {
+    const urlObj = new URL(url);
+    // Path is something like /wiki/The_Washington_Post
+    // Remove leading "/wiki/"
+    const pathParts = urlObj.pathname.split('/');
+    // find the "wiki" part, then the next part is the article
+    // e.g. ['', 'wiki', 'The_Washington_Post']
+    const wikiIndex = pathParts.indexOf('wiki');
+    if (wikiIndex >= 0 && wikiIndex < pathParts.length - 1) {
+      // Rejoin the rest in case article name has slashes
+      const articlePart = pathParts.slice(wikiIndex + 1).join('/');
+      return decodeURIComponent(articlePart);
+    }
+    return urlObj.pathname; // fallback
+  } catch (e) {
+    // fallback if parse fails
+    return url;
   }
 }
 
@@ -228,7 +296,8 @@ function App() {
 
         try {
           const urlObj = new URL(url);
-          // Some domain-based example
+
+          // Domain-based approach to set a fallback logo
           if (urlObj.hostname.includes('cnn')) {
             logoUrl =
               'https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg';
@@ -272,6 +341,7 @@ function App() {
               r.url === result.url
                 ? {
                     ...r,
+                    // Use the fetched title if available; otherwise keep the fallback
                     title: metadata.title || r.title,
                     description: metadata.description,
                   }
@@ -424,7 +494,9 @@ function App() {
           {error && <p className="error">{error}</p>}
           {results.map((result, index) => (
             <div key={result.url || index} className="result-item">
-              <img src={result.logoUrl} alt="logo" className="result-logo" />
+              {result.logoUrl && (
+                <img src={result.logoUrl} alt="logo" className="result-logo" />
+              )}
               <div className="result-content">
                 <h2 className="result-title">
                   <a
