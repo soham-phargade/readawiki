@@ -237,6 +237,7 @@ function App() {
     try {
       // Convert the search query so that spaces become plus signs.
       const formattedQuery = searchQuery.trim().replace(/\s+/g, '+');
+      // Use our own domain and hosted api
       const response = await fetch(
         `https://openfiche-896b9969619d.herokuapp.com/search?q=${formattedQuery}`
       );
