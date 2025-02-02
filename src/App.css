@@ -42,28 +42,19 @@ body {
   justify-content: space-between;
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
-}
-.sidebar-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-.sidebar-toggle {
-  background: none;
-  border: none;
   cursor: pointer;
-  font-size: 1.2rem;
-  color: var(--text-color);
 }
-
-/* When collapsed, center the toggle icon */
-.collapsed-toggle-container {
+.sidebar-title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+.sidebar-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
 }
 
-/* History Tree (One-Level) */
+/* History Tree (One‑Level) */
 .history-tree {
   list-style: none;
   padding: 0.5rem;
