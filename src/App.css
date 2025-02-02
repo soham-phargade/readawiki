@@ -1,11 +1,11 @@
-/* Rose Pine Theme Variables */
+/* Rose Pine Theme Variables with Blue Accent */
 :root {
   --bg-color: #191724;
   --text-color: #e0def4;
-  --accent-color: #eb6f92;
+  --accent-color: #3e8fb0;  /* Blue accent */
   --input-bg: #2a273f;
   --input-text: #e0def4;
-  --border-color: #444;
+  --border-color: #555;  /* Slightly more distinct border */
 }
 
 body {
@@ -37,20 +37,28 @@ body {
 
 /* Search Form */
 .search-form {
-  margin-top: 1rem;
+  margin: 1rem auto;
+  max-width: 800px;
+  width: 100%;
   display: flex;
-  justify-content: center;
 }
 
 .search-input {
-  width: 300px;
+  flex: 1;
   padding: 0.5rem;
   border: 2px solid var(--border-color);
+  border-right: none;
   border-radius: 4px 0 0 4px;
   background-color: var(--input-bg);
   color: var(--input-text);
   outline: none;
   font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 5px var(--accent-color);
 }
 
 .search-button {
@@ -62,11 +70,16 @@ body {
   color: var(--text-color);
   cursor: pointer;
   font-size: 1rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-button:hover {
   background-color: var(--text-color);
   color: var(--bg-color);
+  transform: translateY(-2px);
 }
 
 /* Results */
@@ -79,27 +92,40 @@ body {
 
 .result-item {
   margin-bottom: 2rem;
-  padding: 1rem;
+  padding: 1.5rem;  /* Increased padding for better spacing */
   border-bottom: 1px solid var(--border-color);
 }
 
 .result-title {
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
   color: var(--accent-color);
+  transition: color 0.2s ease;
+}
+
+.result-title a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.result-title a:hover {
+  color: var(--text-color);
 }
 
 .result-snippet {
   font-size: 1rem;
   line-height: 1.4;
+  margin-bottom: 1.5rem; /* Added extra spacing before "Read more" */
 }
 
 .result-link {
   display: inline-block;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;  /* Added margin for better touch usability */
+  padding: 0.25rem 0.5rem;
   color: var(--accent-color);
   text-decoration: none;
   border-bottom: 1px solid transparent;
+  transition: border-bottom 0.2s ease;
 }
 
 .result-link:hover {
