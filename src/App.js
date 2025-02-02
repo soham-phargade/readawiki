@@ -3,9 +3,9 @@ import './App.css';
 
 /**
  * HistorySidebar Component
- * Displays a list of past search queries. Each query is a tree node that can be
- * expanded or collapsed to reveal its leaf nodes—the Wikipedia articles the user clicked.
- * (Since the depth is always one, each query node has only one level of children.)
+ *
+ * When expanded, it shows the full search history (one-level tree: each query with its article leaves).
+ * When collapsed, only a small history icon is shown.
  */
 function HistorySidebar({
   history,
@@ -19,98 +19,135 @@ function HistorySidebar({
 }) {
   return (
     <div className={`sidebar ${isOpen ? 'open' : 'collapsed'}`}>
-      <div className="sidebar-header">
-        {isOpen && <h2>Search History</h2>}
-        <button onClick={onToggleSidebar} className="sidebar-toggle">
-          {isOpen ? '←' : '→'}
-        </button>
-      </div>
-      {isOpen && (
-        <ul className="history-tree">
-          {history.map((queryItem) => {
-            // By default, assume a node is expanded if its value is undefined.
-            const isExpanded =
-              expandedNodes[queryItem.id] === undefined
-                ? true
-                : expandedNodes[queryItem.id];
-            return (
-              <li
-                key={queryItem.id}
-                className={`tree-node ${
-                  activeQueryId === queryItem.id ? 'active' : ''
-                }`}
+      {isOpen ? (
+        <>
+          <div className="sidebar-header">
+            <h2>Search History</h2>
+            <button onClick={onToggleSidebar} className="sidebar-toggle">
+              {/* Collapse icon (an arrow pointing left) */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
               >
-                <div
-                  className="node-content"
-                  onClick={() => onQueryClick(queryItem)}
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          </div>
+          <ul className="history-tree">
+            {history.map((queryItem) => {
+              // Default to expanded (if undefined) so that the articles are visible.
+              const isExpanded =
+                expandedNodes[queryItem.id] === undefined
+                  ? true
+                  : expandedNodes[queryItem.id];
+              return (
+                <li
+                  key={queryItem.id}
+                  className={`tree-node ${
+                    activeQueryId === queryItem.id ? 'active' : ''
+                  }`}
                 >
-                  {queryItem.articles.length > 0 && (
-                    <span
-                      className="toggle-icon"
+                  <div
+                    className="node-content"
+                    onClick={() => onQueryClick(queryItem)}
+                  >
+                    {queryItem.articles.length > 0 && (
+                      <span
+                        className="toggle-icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggle(
+                            queryItem.id,
+                            expandedNodes[queryItem.id] === undefined
+                              ? false
+                              : !expandedNodes[queryItem.id]
+                          );
+                        }}
+                        style={{
+                          transform: isExpanded
+                            ? 'rotate(90deg)'
+                            : 'rotate(0deg)',
+                          transition: 'transform 0.3s ease',
+                        }}
+                      >
+                        ▶
+                      </span>
+                    )}
+                    <span className="node-label">{queryItem.query}</span>
+                    <button
+                      className="delete-button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggle(
-                          queryItem.id,
-                          expandedNodes[queryItem.id] === undefined
-                            ? false
-                            : !expandedNodes[queryItem.id]
-                        );
-                      }}
-                      style={{
-                        transform: isExpanded
-                          ? 'rotate(90deg)'
-                          : 'rotate(0deg)',
-                        transition: 'transform 0.3s ease',
+                        onDelete(queryItem.id, 'query');
                       }}
                     >
-                      ▶
-                    </span>
-                  )}
-                  <span className="node-label">{queryItem.query}</span>
-                  <button
-                    className="delete-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(queryItem.id, 'query');
-                    }}
-                  >
-                    ⋮
-                  </button>
-                </div>
-                {queryItem.articles && queryItem.articles.length > 0 && (
-                  <ul
-                    className="tree-children"
-                    style={{
-                      maxHeight: isExpanded ? '500px' : '0',
-                      transition: 'max-height 0.5s ease',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {queryItem.articles.map((article) => (
-                      <li key={article.id} className="child-node">
-                        <div
-                          className="node-content"
-                          onClick={() => onQueryClick(article)}
-                        >
-                          <span className="node-label">{article.title}</span>
-                          <button
-                            className="delete-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(article.id, 'link', queryItem.id);
-                            }}
+                      ⋮
+                    </button>
+                  </div>
+                  {queryItem.articles && queryItem.articles.length > 0 && (
+                    <ul
+                      className="tree-children"
+                      style={{
+                        maxHeight: isExpanded ? '500px' : '0',
+                        transition: 'max-height 0.5s ease',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {queryItem.articles.map((article) => (
+                        <li key={article.id} className="child-node">
+                          <div
+                            className="node-content"
+                            onClick={() => onQueryClick(article)}
                           >
-                            ⋮
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                            <span className="node-label">{article.title}</span>
+                            <button
+                              className="delete-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(article.id, 'link', queryItem.id);
+                              }}
+                            >
+                              ⋮
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : (
+        <div className="collapsed-toggle-container">
+          <button onClick={onToggleSidebar} className="sidebar-toggle">
+            {/* History icon: clock with anticlockwise arrow */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="history-icon"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+              <polyline points="16 2 16 6 20 6" />
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   );
@@ -119,9 +156,9 @@ function HistorySidebar({
 /**
  * App Component
  *
- * - When the user submits a search, a new query object is created and added to the history.
+ * - A new search query creates a new history node (with its clicked Wikipedia articles as leaves).
  * - The active query is always the most recent search.
- * - When a Wikipedia article is clicked, it is added as a leaf under the active query.
+ * - When a Wikipedia article result is clicked, it is added as a leaf under the active query and opened.
  */
 function App() {
   // History is an array of query objects: { id, query, articles: [ { id, title, url } ] }
@@ -185,7 +222,6 @@ function App() {
       query: query,
       articles: [],
     };
-    // Add the new query as the top of the history list.
     setHistory((prev) => [newQueryNode, ...prev]);
     setActiveQueryId(newQueryNode.id);
   };
@@ -201,7 +237,6 @@ function App() {
     setHistory((prev) =>
       prev.map((q) => {
         if (q.id === activeQueryId) {
-          // Only add if this article isn’t already recorded.
           if (!q.articles.find((a) => a.url === newArticle.url)) {
             return { ...q, articles: [...q.articles, newArticle] };
           }
@@ -213,8 +248,8 @@ function App() {
   };
 
   // When a query (or its article) in the sidebar is clicked:
-  // - If it’s a query node, set it as active, update the search input, and re-run the search.
-  // - If it’s an article node, open its URL.
+  // - For a query node, set it as active, update the search input, and re-run the search.
+  // - For an article node, open its URL.
   const handleQueryClick = (item) => {
     if (item.url) {
       // Article node clicked

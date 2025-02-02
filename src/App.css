@@ -55,6 +55,14 @@ body {
   color: var(--text-color);
 }
 
+/* When collapsed, center the toggle icon */
+.collapsed-toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
 /* History Tree (One-Level) */
 .history-tree {
   list-style: none;
