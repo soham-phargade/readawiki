@@ -5,9 +5,9 @@ import './App.css';
  * HistorySidebar Component
  *
  * Displays the search history as a one‑level tree. Each query node shows the search query,
- * and its only children (leaf nodes) are the Wikipedia articles the user clicked.
+ * and its only children (leaf nodes) are the articles the user clicked.
  *
- * The header now displays a label ("Search History") and a history icon (a clock with a counter‑clockwise arrow).
+ * The header displays a label ("Search History") and a history icon.
  * Clicking anywhere on the header toggles the collapse/expand state.
  */
 function HistorySidebar({
@@ -94,9 +94,7 @@ function HistorySidebar({
                         );
                       }}
                       style={{
-                        transform: isExpanded
-                          ? 'rotate(90deg)'
-                          : 'rotate(0deg)',
+                        transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                         transition: 'transform 0.3s ease',
                       }}
                     >
@@ -111,7 +109,7 @@ function HistorySidebar({
                       onDelete(queryItem.id, 'query');
                     }}
                   >
-                    🚮 
+                    🚮
                   </button>
                 </div>
                 {queryItem.articles && queryItem.articles.length > 0 && (
@@ -137,7 +135,7 @@ function HistorySidebar({
                               onDelete(article.id, 'link', queryItem.id);
                             }}
                           >
-                            🚮 
+                            🚮
                           </button>
                         </div>
                       </li>
@@ -157,8 +155,8 @@ function HistorySidebar({
  * App Component
  *
  * – When the user submits a search, a new query node is created and added at the top of the history.
- * – The active query (the most recent search) is used for adding clicked Wikipedia articles as leaf nodes.
- * – Clicking a query in the sidebar re-runs that search.
+ * – The active query (the most recent search) is used for adding clicked article links as leaf nodes.
+ * – Clicking a query in the sidebar re‑runs that search.
  */
 function App() {
   // History is an array of query objects: { id, query, articles: [ { id, title, url } ] }
@@ -187,26 +185,64 @@ function App() {
     localStorage.setItem('searchHistory', JSON.stringify(history));
   }, [history]);
 
-  // Execute a Wikipedia search query.
+  // Execute a search query using the custom search engine API.
   const doSearch = async (searchQuery) => {
     setLoading(true);
     setError(null);
     try {
+      // Convert the search query so that spaces become plus signs.
+      const formattedQuery = searchQuery.trim().replace(/\s+/g, '+');
       const response = await fetch(
-        `https://en.wikipedia.org/w/api.php?origin=*&action=query&generator=search&gsrsearch=${encodeURIComponent(
-          searchQuery
-        )}&prop=extracts&exintro=1&exsentences=10&explaintext=1&format=json`
+        `http://35.11.25.188:5000/search?q=${formattedQuery}`
       );
       const data = await response.json();
-      if (data.query && data.query.pages) {
-        const pages = Object.values(data.query.pages);
-        pages.sort((a, b) => a.index - b.index);
-        setResults(pages);
-      } else {
-        setResults([]);
-      }
+      // Data is in the format:
+      // [ [ score, "url" ], [ score, "url" ], ... ]
+      // Map the data to objects, assign a logo based on the domain, and extract a title.
+      const resultsData = data.map((item) => {
+        const [/*score*/, url] = item; // remove score
+        let title = url;
+        let logoUrl = '';
+        try {
+          const urlObj = new URL(url);
+          // Determine logo based on domain
+          if (urlObj.hostname.includes('cnn')) {
+            logoUrl =
+              'https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg';
+          } else if (urlObj.hostname.includes('wikipedia')) {
+            logoUrl =
+              'https://upload.wikimedia.org/wikipedia/commons/4/46/Wikipedia-W-visual-balanced.svg';
+          } else if (urlObj.hostname.includes('npr')) {
+            logoUrl =
+              'https://upload.wikimedia.org/wikipedia/commons/d/d7/National_Public_Radio_logo.svg';
+          }
+          // Extract a candidate title from the URL's pathname.
+          const parts = urlObj.pathname.split('/').filter(Boolean);
+          if (parts.length > 0) {
+            // Use the second-to-last part if the last part is "index"
+            let candidate = parts[parts.length - 1].split('.')[0];
+            if (candidate.toLowerCase() === 'index' && parts.length > 1) {
+              candidate = parts[parts.length - 2];
+            }
+            // Replace dashes/underscores with spaces and apply Title Case.
+            candidate = candidate.replace(/[-_]/g, ' ');
+            title = candidate
+              .split(' ')
+              .map(
+                (word) =>
+                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+              )
+              .join(' ');
+          }
+        } catch (err) {
+          title = url;
+        }
+        return { url, title, logoUrl };
+      });
+      setResults(resultsData);
     } catch (err) {
       setError('Error fetching results');
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -226,13 +262,13 @@ function App() {
     setActiveQueryId(newQueryNode.id);
   };
 
-  // When a Wikipedia result is clicked, add it as a leaf under the active query and open it.
+  // When a result is clicked, add it as a leaf under the active query and open it.
   const handleResultClick = (result) => {
     if (!activeQueryId) return;
     const newArticle = {
       id: Date.now().toString(),
       title: result.title,
-      url: `https://en.wikipedia.org/?curid=${result.pageid}`,
+      url: result.url,
     };
     setHistory((prev) =>
       prev.map((q) => {
@@ -248,7 +284,7 @@ function App() {
   };
 
   // When a query (or its article) in the sidebar is clicked:
-  // – If it’s a query node, set it as active and re-run the search.
+  // – If it’s a query node, set it as active and re‑run the search.
   // – If it’s an article node, open its URL.
   const handleQueryClick = (item) => {
     if (item.url) {
@@ -305,7 +341,7 @@ function App() {
       />
       <div className="main-content">
         <header className="app-header">
-          <h1 className="app-title">ReadA.Wiki</h1>
+          <h1 className="app-title">OpenFiche</h1>
           <form className="search-form" onSubmit={handleSearch}>
             <input
               type="text"
@@ -336,28 +372,34 @@ function App() {
         <section className="results">
           {loading && <p className="loading">Loading...</p>}
           {error && <p className="error">{error}</p>}
-          {results.map((result) => (
-            <div key={result.pageid} className="result-item">
-              <h2 className="result-title">
+          {results.map((result, index) => (
+            <div key={result.url || index} className="result-item">
+              <img
+                src={result.logoUrl}
+                alt="logo"
+                className="result-logo"
+              />
+              <div className="result-content">
+                <h2 className="result-title">
+                  <a
+                    href={result.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleResultClick(result)}
+                  >
+                    {result.title}
+                  </a>
+                </h2>
                 <a
-                  href={`https://en.wikipedia.org/?curid=${result.pageid}`}
+                  href={result.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="result-link"
                   onClick={() => handleResultClick(result)}
                 >
-                  {result.title}
+                  Read more
                 </a>
-              </h2>
-              <p className="result-snippet">{result.extract}</p>
-              <a
-                href={`https://en.wikipedia.org/?curid=${result.pageid}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="result-link"
-                onClick={() => handleResultClick(result)}
-              >
-                Read more
-              </a>
+              </div>
             </div>
           ))}
         </section>

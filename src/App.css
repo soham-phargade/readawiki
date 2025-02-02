@@ -201,3 +201,61 @@ body {
   font-size: 1.2rem;
   margin: 1rem 0;
 }
+
+/* Result Items: Display as card with logo to the left */
+.result-item {
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Logo displayed to the left of the text */
+.result-logo {
+  width: 2em;
+  height: 2em;
+  margin-right: 1rem;
+  object-fit: contain;
+}
+
+/* Container for the text content of a result */
+.result-content {
+  flex: 1;
+}
+
+/* Optional: Adjust spacing for the result title and link */
+.result-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: var(--accent-color);
+}
+
+.result-title a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.result-title a:hover {
+  text-decoration: underline;
+}
+
+.result-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.result-link:hover {
+  background-color: var(--input-bg);
+}
+
+.result-title {
+  font-weight: normal;
+}
