@@ -4,11 +4,10 @@ import './App.css';
 /**
  * HistorySidebar Component
  *
- * Displays the search history as a one‑level tree. Each query node shows the search query,
- * and its only children (leaf nodes) are the articles the user clicked.
- *
- * The header displays a label ("Search History") and a history icon.
- * Clicking anywhere on the header toggles the collapse/expand state.
+ * Displays two separate header elements:
+ *  - expanded-header (icon + "Search History") when isOpen is true
+ *  - collapsed-header (icon only) when isOpen is false
+ * Below that, we only render the history list if isOpen is true.
  */
 function HistorySidebar({
   history,
@@ -22,33 +21,13 @@ function HistorySidebar({
 }) {
   return (
     <div className={`sidebar ${isOpen ? 'open' : 'collapsed'}`}>
-      <div className="sidebar-header" onClick={onToggleSidebar}>
-        {isOpen ? (
-          <>
-            <h2 className="sidebar-title">Search History</h2>
-            <span className="sidebar-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <polyline points="12 8 12 12 14 14"></polyline>
-                <path d="M21 12a9 9 0 1 1-3.5-7.5"></path>
-              </svg>
-            </span>
-          </>
-        ) : (
+      {isOpen ? (
+        <div className="expanded-header" onClick={onToggleSidebar}>
           <span className="sidebar-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="30"
+              height="30"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -60,16 +39,39 @@ function HistorySidebar({
               <path d="M21 12a9 9 0 1 1-3.5-7.5"></path>
             </svg>
           </span>
-        )}
-      </div>
+          <h2 className="sidebar-title">Search History</h2>
+        </div>
+      ) : (
+        <div className="collapsed-header" onClick={onToggleSidebar}>
+          <span className="sidebar-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="30"
+              height="30"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              viewBox="0 0 24 24"
+              
+            >
+              <polyline points="12 8 12 12 14 14"></polyline>
+              <path d="M21 12a9 9 0 1 1-3.5-7.5"></path>
+            </svg>
+          </span>
+        </div>
+      )}
+
       {isOpen && (
         <ul className="history-tree">
           {history.map((queryItem) => {
-            // By default, a query's articles list is expanded if no value is set.
+            // Is this query expanded or collapsed?
             const isExpanded =
               expandedNodes[queryItem.id] === undefined
                 ? true
                 : expandedNodes[queryItem.id];
+
             return (
               <li
                 key={queryItem.id}
@@ -112,6 +114,7 @@ function HistorySidebar({
                     🚮
                   </button>
                 </div>
+
                 {queryItem.articles && queryItem.articles.length > 0 && (
                   <ul
                     className="tree-children"
@@ -151,28 +154,7 @@ function HistorySidebar({
   );
 }
 
-/**
- * Fetch the metadata (title and description) for a given URL by fetching its HTML
- * and parsing the metatags.
- */
-// async function fetchMetadata(url) {
-//   try {
-//     const response = await fetch(url);
-//     const htmlText = await response.text();
-//     const parser = new DOMParser();
-//     const doc = parser.parseFromString(htmlText, 'text/html');
-//     const metaTitle = doc.querySelector('title')?.textContent || '';
-//     const metaDescription =
-//       doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
-//       doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
-//       '';
-//     return { title: metaTitle, description: metaDescription };
-//   } catch (error) {
-//     console.error('Error fetching metadata for', url, error);
-//     return { title: '', description: '' };
-//   }
-// }
-
+// Fetch metadata (title, description) for a given URL
 async function fetchMetadata(url) {
   try {
     const response = await fetch(url);
@@ -181,11 +163,14 @@ async function fetchMetadata(url) {
     const doc = parser.parseFromString(htmlText, 'text/html');
 
     const metaTitle = doc.querySelector('title')?.textContent || '';
-
     const metaDescription =
       doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
-      doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
-      doc.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || 
+      doc
+        .querySelector('meta[property="og:description"]')
+        ?.getAttribute('content') ||
+      doc
+        .querySelector('meta[name="twitter:description"]')
+        ?.getAttribute('content') ||
       '';
 
     return { title: metaTitle, description: metaDescription };
@@ -195,25 +180,17 @@ async function fetchMetadata(url) {
   }
 }
 
-
 /**
  * App Component
- *
- * – When the user submits a search, a new query node is created and added at the top of the history.
- * – The active query (the most recent search) is used for adding clicked article links as leaf nodes.
- * – Clicking a query in the sidebar re‑runs that search.
+ *  - Manages search state, results, history, etc.
  */
 function App() {
-  // History is an array of query objects: { id, query, articles: [ { id, title, url } ] }
   const [history, setHistory] = useState([]);
-  // activeQueryId is the id of the currently active search query.
   const [activeQueryId, setActiveQueryId] = useState(null);
-  // Search input and results state
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // Sidebar open/collapsed state and node expansion state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState({});
 
@@ -230,28 +207,28 @@ function App() {
     localStorage.setItem('searchHistory', JSON.stringify(history));
   }, [history]);
 
-  // Execute a search query using the custom search engine API.
+  // Perform the search using your backend search API
   const doSearch = async (searchQuery) => {
     setLoading(true);
     setError(null);
+
     try {
-      // Convert the search query so that spaces become plus signs.
       const formattedQuery = searchQuery.trim().replace(/\s+/g, '+');
-      // Use our search engine on a hosted api
       const response = await fetch(
         `https://openfiche-896b9969619d.herokuapp.com/search?q=${formattedQuery}`
       );
       const data = await response.json();
-      // Data is in the format:
-      // [ [ score, "url" ], [ score, "url" ], ... ]
-      // Map the data to objects, assign a logo based on the domain, and extract an initial title.
+
+      // Data looks like [ [score, "url"], [score, "url"], ... ]
+      // Convert to your results structure
       const resultsData = data.map((item) => {
-        const [/*score*/, url] = item; // remove score
+        const [/*score*/, url] = item;
         let title = url;
         let logoUrl = '';
+
         try {
           const urlObj = new URL(url);
-          // Determine logo based on domain
+          // Some domain-based example
           if (urlObj.hostname.includes('cnn')) {
             logoUrl =
               'https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg';
@@ -262,40 +239,39 @@ function App() {
             logoUrl =
               'https://upload.wikimedia.org/wikipedia/commons/d/d7/National_Public_Radio_logo.svg';
           }
-          // Extract a candidate title from the URL's pathname.
+
+          // Derive a fallback title from the URL path
           const parts = urlObj.pathname.split('/').filter(Boolean);
           if (parts.length > 0) {
-            // Use the second-to-last part if the last part is "index"
             let candidate = parts[parts.length - 1].split('.')[0];
             if (candidate.toLowerCase() === 'index' && parts.length > 1) {
               candidate = parts[parts.length - 2];
             }
-            // Replace dashes/underscores with spaces and apply Title Case.
             candidate = candidate.replace(/[-_]/g, ' ');
             title = candidate
               .split(' ')
               .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
               )
               .join(' ');
           }
         } catch (err) {
           title = url;
         }
+
         return { url, title, logoUrl, description: '' };
       });
+
       setResults(resultsData);
 
-      // For each result, fetch its metadata (title and description) from the URL.
+      // Fetch metadata (title and description) asynchronously
       resultsData.forEach((result) => {
         fetchMetadata(result.url).then((metadata) => {
-          setResults((prevResults) =>
-            prevResults.map((r) =>
+          setResults((prev) =>
+            prev.map((r) =>
               r.url === result.url
                 ? {
                     ...r,
-                    // Use the fetched title if available; otherwise keep the fallback.
                     title: metadata.title || r.title,
                     description: metadata.description,
                   }
@@ -312,21 +288,24 @@ function App() {
     }
   };
 
-  // When the user submits a search, create a new query node.
+  // Handle the user's search submission
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
+
     await doSearch(query);
+
     const newQueryNode = {
       id: Date.now().toString(),
       query: query,
       articles: [],
     };
+
     setHistory((prev) => [newQueryNode, ...prev]);
     setActiveQueryId(newQueryNode.id);
   };
 
-  // When a result is clicked, add it as a leaf under the active query and open it.
+  // When a result is clicked, open it and add it to the active query
   const handleResultClick = (result) => {
     if (!activeQueryId) return;
     const newArticle = {
@@ -334,9 +313,11 @@ function App() {
       title: result.title,
       url: result.url,
     };
+
     setHistory((prev) =>
       prev.map((q) => {
         if (q.id === activeQueryId) {
+          // Avoid duplicates
           if (!q.articles.find((a) => a.url === newArticle.url)) {
             return { ...q, articles: [...q.articles, newArticle] };
           }
@@ -344,12 +325,13 @@ function App() {
         return q;
       })
     );
+
     window.open(newArticle.url, '_blank');
   };
 
-  // When a query (or its article) in the sidebar is clicked:
-  // – If it’s a query node, set it as active and re‑run the search.
-  // – If it’s an article node, open its URL.
+  // Clicking an item in the history sidebar
+  // - If it's a query, we re-run that search
+  // - If it's an article link, open that link
   const handleQueryClick = (item) => {
     if (item.url) {
       window.open(item.url, '_blank');
@@ -360,9 +342,7 @@ function App() {
     }
   };
 
-  // Delete a node from the history.
-  // For type "query", remove the entire query node.
-  // For type "link", remove that article from the parent query.
+  // Delete a query node or an article link
   const handleDelete = (id, type, parentId = null) => {
     if (type === 'query') {
       setHistory((prev) => prev.filter((q) => q.id !== id));
@@ -381,12 +361,12 @@ function App() {
     }
   };
 
-  // Toggle the sidebar open/collapsed.
+  // Toggle the sidebar open/collapsed
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
 
-  // Toggle expansion of a query node's articles list.
+  // Toggle expansion for a query node's articles
   const toggleNodeExpansion = (id, newValue) => {
     setExpandedNodes((prev) => ({ ...prev, [id]: newValue }));
   };
@@ -403,12 +383,14 @@ function App() {
         isOpen={isSidebarOpen}
         onToggleSidebar={toggleSidebar}
       />
+
       <div className="main-content">
         <header className="app-header">
           <div className="title-and-icon">
-          <h1 className="app-title">OpenFiche Search</h1>
-          <img src="/icon.ico" alt="OpenFiche Icon" className="app-icon" />
+            <h1 className="app-title">OpenFiche Search</h1>
+            <img src="/icon.ico" alt="OpenFiche Icon" className="app-icon" />
           </div>
+
           <form className="search-form" onSubmit={handleSearch}>
             <input
               type="text"
@@ -436,6 +418,7 @@ function App() {
             </button>
           </form>
         </header>
+
         <section className="results">
           {loading && <p className="loading">Loading...</p>}
           {error && <p className="error">{error}</p>}
