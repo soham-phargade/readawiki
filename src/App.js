@@ -309,7 +309,7 @@ function App() {
           <form className="search-form" onSubmit={handleSearch}>
             <input
               type="text"
-              placeholder="Search Wikipedia..."
+              placeholder="Search with OpenFiche..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="search-input"
