@@ -23,26 +23,10 @@ body {
   min-height: 100vh;
 }
 
-/* SIDEBAR */
-.sidebar {
-  position: relative; /* so headers can be absolutely placed inside */
-  background-color: var(--input-bg);
-  border-right: 1px solid var(--border-color);
-  box-shadow: var(--shadow);
-  transition: width 0.3s ease;
-  min-height: 100vh;  /* fill full vertical space */
-  overflow-y: auto;
-  width: 300px;       /* default open width */
-}
-
-.sidebar.open {
-  width: 300px;
-  overflow: auto;  /* normal scrolling when open */
-}
-
-.sidebar.collapsed {
-  width: 0;
-  overflow: visible; /* keep icon clickable even though width=0 */
+.blurred {
+  filter: blur(5px);
+  pointer-events: none; /* Disable interaction with blurred content */
+  user-select: none;    /* Optional: prevent text selection */
 }
 
 /* ========== HEADERS (expanded vs collapsed) ========== */
@@ -251,4 +235,25 @@ body {
   text-align: center;
   font-size: 1.2rem;
   margin: 1rem 0;
+}
+
+.help-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  border: none;
+  border-radius: 50px;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background-color 0.3s, transform 0.2s;
+  z-index: 1000; /* Keep it on top */
+}
+
+.help-button:hover {
+  background-color: lighten(var(--accent-color), 10%);
+  transform: scale(1.05);
 }
