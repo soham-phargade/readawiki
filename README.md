@@ -2,7 +2,9 @@
 [![GitHub](https://img.shields.io/badge/GitHub-repo-blue?logo=github)](https://github.com/soham-phargade/readawiki)  
 
 ## **Overview**  
-**OpenFiche** is a lightweight, **post-AI search engine** that prioritizes **high-signal, human-vetted content** over engagement-driven results. Inspired by microfiche, it indexes Wikipedia (CS-related articles), CNN, and NPR, using **PageRank + keyword scoring** to rank pages based on relevance, not SEO tricks.  
+**OpenFiche** is a lightweight, **post-AI search engine** that prioritizes **high-signal, human-vetted content** over engagement-driven results. Inspired by microfiche, it indexes Wikipedia (CS-related articles), CNN, and NPR, using **PageRank + keyword scoring** to rank pages based on relevance, not SEO tricks.
+
+OpenFiche was a project built at SpartaHack X. We reflected on how Google's current search algorithm has been declining in quality, leading it to produce less relevant results, as the SEO is slammed with tags. We remember how effective Google's algorithm used to be before SEO tagging became commonplace, and in hopes to return to a search engine of this quality, we reimplemented Google's Pagerank indexing Wikipedia (CS-related articles), CNN, and NPR using PageRank + keyword scoring. This allowed us to rank pages based on relevance, not SEO tricks, and we encased this tool inside a minimalist web browser that helps academics zone in on their research 
 
 ## **Features**  
 ✅ **Transparent Ranking** – Uses **PageRank + keyword analysis** for results  
